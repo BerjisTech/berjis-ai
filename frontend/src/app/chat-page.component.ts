@@ -17,9 +17,9 @@ export class ChatPageComponent implements OnInit {
   authed = false;
   mx = 50; my = 50; fg = '#eff6ff'; bg = '#f8fafc';
   demoInput = '';
-  demoPlaceholder = '“Draft a weekly update from my Notes, summarize Docs A & B, and recommend 3 products for Marketplace”';
+  demoPlaceholder = "“Draft a weekly update from my Notes, summarize Docs A & B, and recommend 3 products for Marketplace”";
   year = new Date().getFullYear();
-  themeIcon = '🌞';
+  themeIcon = "🌞";
   appPills = [
     { name: 'Docs', href: 'https://docs.berjis.tech' },
     { name: 'Sheets', href: 'https://sheets.berjis.tech' },
@@ -50,8 +50,8 @@ export class ChatPageComponent implements OnInit {
   applyThemeColors() {
     const dark = document.documentElement.classList.contains('dark');
     this.fg = dark ? '#0b1437' : '#eff6ff';
-    this.bg = dark ? '#1b388d' : '#f8fafc';
-    this.themeIcon = dark ? '🌙' : '🌞';
+    this.bg = dark ? '#0b1324' : '#f8fafc';
+    this.themeIcon = dark ? "🌙" : "🌞";
   }
   onMove(e: MouseEvent) {
     this.mx = Math.max(0, Math.min(100, (e.clientX / window.innerWidth) * 100));
@@ -70,3 +70,5 @@ export class ChatPageComponent implements OnInit {
   toggleFaq(i: number) { this.openSet.has(i) ? this.openSet.delete(i) : this.openSet.add(i); }
   isOpen(i: number) { return this.openSet.has(i); }
 }
+
+

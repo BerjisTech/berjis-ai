@@ -7,4 +7,5 @@
 :root { color-scheme: light dark; }
 html, body { height: 100%; margin: 0; }
 body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, 'Apple Color Emoji', 'Segoe UI Emoji'; }
-
+.brand-radial-bg {background: radial-gradient(at 0% 100%, rgb(239 246 255) 0%, rgb(248 250 252) 100%);}
+.brand-radial-bg.dark,.dark .brand-radial-bg {background: radial-gradient(at 0% 100%, rgb(30 58 138) 0%, rgb(15 23 42) 100%);}

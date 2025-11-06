@@ -19,24 +19,30 @@
 </section>
 
 <ng-template #marketing>
-    <section class="hero-landing" (mousemove)="onMove($event)" [style.--mx]="mx + '%'" [style.--my]="my + '%'"
-        [style.--fg]="fg" [style.--bg]="bg">
+    <section
+        class="hero-landing min-h-screen w-full bg-[radial-gradient(320px_at_var(--mx,50%)_var(--my,50%),theme(colors.blue.50),theme(colors.slate.50))] dark:bg-[radial-gradient(320px_at_var(--mx,50%)_var(--my,50%),theme(colors.blue.900),theme(colors.slate.900))]"
+        (mousemove)="onMove($event)" [style.--mx]="mx + '%'" [style.--my]="my + '%'">
         <div class="nav">
             <div class="brand">Berjis<span class="accent">AI</span></div>
-            <div class="actions">
-                <button class="btn toggle" (click)="toggleTheme()" aria-label="Toggle theme">{{ themeIcon }}</button>
-                <a class="btn ghost" (click)="goToLogin()">Login</a>
-                <a class="btn primary" (click)="goToLogin()">Try Now</a>
+            <div class="actions flex items-center gap-2">
+                <button
+                    class="inline-flex items-center justify-center rounded-md border border-blue-800/50 bg-white/70 text-blue-800 hover:bg-white/90 dark:border-blue-400/50 dark:bg-slate-900/60 dark:text-blue-400 w-9 h-9"
+                    (click)="toggleTheme()" aria-label="Toggle theme">{{ themeIcon }}</button>
+                <a class="inline-flex items-center rounded-md border border-blue-800 text-blue-800 px-3 py-2 hover:bg-blue-50 dark:border-blue-400 dark:text-blue-400 dark:hover:bg-slate-900/60"
+                    (click)="goToLogin()">Login</a>
+                <a class="inline-flex items-center rounded-md bg-blue-800 text-white px-3 py-2 hover:bg-blue-800/90 dark:bg-blue-400 dark:text-slate-900 dark:hover:bg-blue-400/90"
+                    (click)="goToLogin()">Try Now</a>
             </div>
         </div>
         <div class="center">
-            <h2 class="tagline text-slate-900 dark:text-slate-100">Get the most out of your <span class="gold">Berjis
-                    Ecosystem</span></h2>
+            <h2 class="tagline">Get the most out of your <span class="gold">Berjis Ecosystem</span></h2>
             <p class="sub">Your private, self‑hosted assistant that works across Docs, Sheets, Notes, Marketplace,
                 Logistics, and more.</p>
-            <div class="prompt flex flex-col">
-                <input class="h-[300px] w-full" [(ngModel)]="demoInput" (keyup.enter)="goToLogin()"
-                    [placeholder]="demoPlaceholder" />
+            <div
+                class="prompt flex flex-col brand-radial-bg">
+                <input
+                    class="h-[300px] w-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-50 flex items-start justify-start"
+                    [(ngModel)]="demoInput" (keyup.enter)="goToLogin()" [placeholder]="demoPlaceholder" />
                 <div class="w-full flex items-center justify-between">
                     <div class="icons flex items-center justify-start gap-2">
                         <span title="Attach files">📎</span>
@@ -48,56 +54,62 @@
             </div>
             <div class="pills">
                 <a *ngFor="let app of appPills"
-                    class="pill w-[200px] h-[50px] flex items-center justify-center rounded-md!" [href]="app.href"
-                    target="_blank" rel="noopener">{{
-                    app.name }}</a>
+                    class="pill border border-blue-200 dark:border-blue-800 brand-radial-bg dark:text-blue-400"
+                    [href]="app.href" target="_blank" rel="noopener">{{ app.name }}</a>
             </div>
         </div>
     </section>
 
     <section class="capabilities">
-        <div class="grid text-slate-900 dark:text-slate-100">
-            <article class="bg-radial-[at_0%_100%]! from-blue-50! to-slate-50! dark:from-blue-900! dark:to-slate-900! shadow-blue-100 dark:shadow-blue-800 shadow tile lg">
-                <h3>Summarize & explain</h3>
+        <div class="!text-slate-900 dark:!text-slate-50 grid gap-2 !grid-cols-1 lg:!grid-cols-3 grid-flow-dense auto-rows-[200px]">
+            <article
+                class="brand-radial-bg col-span-1 row-span-3 shadow shadow-blue-100 dark:shadow-blue-800 p-2">
+                <h3 class="text-xl">Summarize & explain</h3>
                 <p>Turn long docs, notes, or PDFs into clear summaries and next steps.</p>
             </article>
-            <article class="bg-radial-[at_0%_100%]! from-blue-50! to-slate-50! dark:from-blue-900! dark:to-slate-900! shadow-blue-100 dark:shadow-blue-800 shadow tile sm">
-                <h3>Write & polish</h3>
+            <article
+                class="brand-radial-bg col-span-1 row-span-2 shadow shadow-blue-100 dark:shadow-blue-800 p-2">
+                <h3 class="text-xl">Write & polish</h3>
                 <p>Draft emails, proposals, and posts in your tone.</p>
             </article>
-            <article class="bg-radial-[at_0%_100%]! from-blue-50! to-slate-50! dark:from-blue-900! dark:to-slate-900! shadow-blue-100 dark:shadow-blue-800 shadow tile md">
-                <h3>Plan & schedule</h3>
+            <article
+                class="brand-radial-bg col-span-1 row-span-1 shadow shadow-blue-100 dark:shadow-blue-800 p-2">
+                <h3 class="text-xl">Plan & schedule</h3>
                 <p>Create task lists, timelines, and reminders across apps.</p>
             </article>
-            <article class="bg-radial-[at_0%_100%]! from-blue-50! to-slate-50! dark:from-blue-900! dark:to-slate-900! shadow-blue-100 dark:shadow-blue-800 shadow tile md">
-                <h3>Analyze & recommend</h3>
+            <article
+                class="brand-radial-bg col-span-1 row-span-1 shadow shadow-blue-100 dark:shadow-blue-800 p-2">
+                <h3 class="text-xl">Analyze & recommend</h3>
                 <p>Explore shop performance and inventory trends.</p>
             </article>
-            <article class="bg-radial-[at_0%_100%]! from-blue-50! to-slate-50! dark:from-blue-900! dark:to-slate-900! shadow-blue-100 dark:shadow-blue-800 shadow tile sm">
-                <h3>Help build</h3>
+            <article
+                class="brand-radial-bg col-span-2 row-span-1 shadow shadow-blue-100 dark:shadow-blue-800 p-2">
+                <h3 class="text-xl">Help build</h3>
                 <p>Suggest components and patterns in Architect.</p>
             </article>
         </div>
     </section>
 
     <section class="faq">
-        <h3>Frequently asked questions</h3>
+        <h3 class="text-xl">Frequently asked questions</h3>
         <div class="accordion">
-            <div class="item bg-radial-[at_0%_100%]! from-blue-50! to-slate-50! dark:from-blue-900! dark:to-slate-900! text-slate-900 dark:text-slate-100" *ngFor="let f of faqs; let i = index">
-                <button class="q" (click)="toggleFaq(i)">
+            <div class="item !text-slate-900 dark:!text-slate-300 brand-radial-bg flex flex-col items-start justify-start gap-2" *ngFor="let f of faqs; let i = index">
+                <button class="q text-slate-900 dark:text-slate-300 text-lg font-semibold" (click)="toggleFaq(i)">
                     <span class="icon">{{ isOpen(i) ? '−' : '+' }}</span>
                     <span class="text">{{ f.q }}</span>
                 </button>
-                <div class="a" [class.open]="isOpen(i)">
+                <div class="a text-slate-700 dark:text-slate-400  text-small font-extralight" [class.open]="isOpen(i)">
                     <p>{{ f.a }}</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <section class="cta">
-        <h3>Ready to get more from Berjis?</h3>
-        <button class="btn primary" (click)="goToLogin()">Sign in to Berjis</button>
+    <section class="cta text-center">
+        <h3 class="text-xl font-semibold text-slate-900 dark:text-white mb-3">Ready to get more from Berjis?</h3>
+        <button
+            class="inline-flex items-center rounded-md bg-blue-800 text-white px-4 py-2 hover:bg-blue-800/90 dark:bg-blue-400 dark:text-slate-900 dark:hover:bg-blue-400/90"
+            (click)="goToLogin()">Sign in to Berjis</button>
     </section>
 
     <footer class="footer">
