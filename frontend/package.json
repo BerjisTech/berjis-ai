@@ -1,0 +1,34 @@
+{
+  "name": "berjis-ai-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "ng build",
+    "start": "ng serve --host 0.0.0.0 --port 5600"
+  },
+  "dependencies": {
+    "@angular/animations": "^17.3.0",
+    "@angular/common": "^17.3.0",
+    "@angular/compiler": "^17.3.0",
+    "@angular/core": "^17.3.0",
+    "@angular/forms": "^17.3.0",
+    "@angular/platform-browser": "^17.3.0",
+    "@angular/platform-browser-dynamic": "^17.3.0",
+    "@angular/router": "^17.3.0",
+    "rxjs": "~7.8.0",
+    "tslib": "^2.6.2",
+    "zone.js": "~0.14.2"
+  },
+  "devDependencies": {
+    "@angular-devkit/build-angular": "^17.3.0",
+    "@angular/cli": "^17.3.0",
+    "@angular/compiler-cli": "^17.3.0",
+    "@types/node": "^20.11.0",
+    "tailwindcss": "^3.4.3",
+    "postcss": "^8.4.31",
+    "autoprefixer": "^10.4.15",
+    "typescript": "~5.3.3",
+    "ng-packagr": "^17.3.0"
+  }
+}
+

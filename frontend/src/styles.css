@@ -1,0 +1,10 @@
+/* Tailwind entry (optional) */
+/* If Tailwind is not enabled in the build env yet, these are harmless. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: light dark; }
+html, body { height: 100%; margin: 0; }
+body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, 'Apple Color Emoji', 'Segoe UI Emoji'; }
+

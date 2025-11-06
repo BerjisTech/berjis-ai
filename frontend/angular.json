@@ -1,0 +1,96 @@
+{
+  "$schema": "https://raw.githubusercontent.com/angular/angular-cli/main/packages/angular/cli/lib/config/workspace-schema.json",
+  "version": 1,
+  "projects": {
+    "aiapp": {
+      "projectType": "application",
+      "root": "",
+      "sourceRoot": "src",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:application",
+          "options": {
+            "outputPath": "dist/aiapp",
+            "index": "src/index.html",
+            "browser": "src/main.ts",
+            "polyfills": [
+              "zone.js"
+            ],
+            "tsConfig": "tsconfig.app.json",
+            "inlineStyleLanguage": "css",
+            "assets": [
+              "src/favicon.ico",
+              "src/assets"
+            ],
+            "styles": ["src/styles.css"],
+            "scripts": []
+          },
+          "configurations": {
+            "production": {
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.prod.ts"
+                }
+              ],
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "3MB",
+                  "maximumError": "500MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "8kB",
+                  "maximumError": "12kB"
+                }
+              ],
+              "outputHashing": "all",
+              "optimization": {
+                "scripts": true,
+                "styles": true
+              },
+              "sourceMap": false,
+              "namedChunks": false,
+              "extractLicenses": true
+            },
+            "development": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "configurations": {
+            "production": {
+              "buildTarget": "aiapp:build:production"
+            },
+            "development": {
+              "buildTarget": "aiapp:build:development"
+            }
+          },
+          "defaultConfiguration": "development"
+        }
+      }
+    },
+    "ai-chat": {
+      "projectType": "library",
+      "root": "projects/ai-chat",
+      "sourceRoot": "projects/ai-chat/src",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:ng-packagr",
+          "options": {
+            "project": "projects/ai-chat/ng-package.json"
+          }
+        }
+      }
+    }
+  },
+  "cli": {
+    "analytics": "82b4cfab-de8e-44db-abc7-adbdd57a7fe3"
+  }
+}

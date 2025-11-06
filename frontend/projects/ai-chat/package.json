@@ -1,0 +1,9 @@
+{
+  "name": "@berjis/ai-chat",
+  "version": "0.1.0",
+  "peerDependencies": {
+    "@angular/common": ">=17.0.0",
+    "@angular/core": ">=17.0.0"
+  }
+}
+

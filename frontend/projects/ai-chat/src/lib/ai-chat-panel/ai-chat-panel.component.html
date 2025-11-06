@@ -1,0 +1,16 @@
+<section class="chat-panel">
+  <header class="chat-header">
+    <h3>Berjis AI</h3>
+    <div class="model">Model: {{ model }}</div>
+  </header>
+  <div class="chat-body">
+    <div *ngFor="let m of messages" class="msg" [class.user]="m.role==='user'" [class.assistant]="m.role==='assistant'">
+      <div class="bubble">{{ m.content }}</div>
+    </div>
+  </div>
+  <footer class="chat-input">
+    <input [placeholder]="placeholder" [(ngModel)]="input" (keyup.enter)="send()" />
+    <button (click)="send()" [disabled]="sending">Send</button>
+  </footer>
+</section>
+
