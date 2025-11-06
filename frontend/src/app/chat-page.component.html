@@ -1,21 +1,10 @@
-<section class="px-6 md:px-16 py-8 md:py-12" *ngIf="authed; else marketing">
-    <header class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">Berjis AI</h1>
-        <button class="text-sm text-slate-700 dark:text-slate-200" (click)="toggleTheme()">Toggle Theme</button>
-    </header>
-    <div class="grid md:grid-cols-[1fr_min(460px,40vw)] gap-6">
-        <div class="rounded-xl p-6 border border-blue-900/20 dark:border-slate-800 bg-white/80 dark:bg-slate-900/70">
-            <h2 class="text-lg font-semibold mb-2 text-slate-900 dark:text-white">What to expect</h2>
-            <ul class="list-disc pl-5 text-slate-700 dark:text-slate-200 text-sm">
-                <li>Private, self-hosted AI across the Berjis ecosystem.</li>
-                <li>Best for summaries, writing help, planning, and Q&A.</li>
-                <li>Use the chat on the right to start a conversation.</li>
-            </ul>
-        </div>
-        <div class="min-h-[60vh]">
-            <berjis-ai-chat-panel [base]="env.aiBase"></berjis-ai-chat-panel>
-        </div>
-    </div>
+<section *ngIf="authed; else marketing"
+    class="relative w-screen h-screen overflow-x-hidden bg-[radial-gradient(320px_at_var(--mxpx,50vw)_var(--mypx,50vh),theme(colors.blue.100),theme(colors.slate.50))] dark:bg-[radial-gradient(320px_at_var(--mxpx,50vw)_var(--mypx,50vh),theme(colors.blue.900),theme(colors.slate.900))]"
+    (mousemove)="onMove($event)" [style.--mxpx.px]="mxpx" [style.--mypx.px]="mypx">
+    <button
+        class="absolute top-4 right-4 inline-flex items-center justify-center rounded-md border border-blue-800/50 bg-white/70 text-blue-800 hover:bg-white/90 dark:border-blue-400/50 dark:bg-slate-900/60 dark:text-blue-400 w-9 h-9"
+        (click)="toggleTheme()" aria-label="Toggle theme">{{ themeIcon }}</button>
+    <berjis-ai-chat-panel class="w-full h-full" [base]="env.aiBase"></berjis-ai-chat-panel>
 </section>
 
 <ng-template #marketing>
@@ -41,7 +30,7 @@
                 <div class="prompt flex flex-col brand-radial-bg-bl">
                     <textarea
                         class="h-[300px] w-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-50 outline-none focus:outline-none flex items-start justify-start"
-                        [(ngModel)]="demoInput" (keyup.enter)="goToLogin()" [placeholder]="demoPlaceholder" ></textarea>
+                        [(ngModel)]="demoInput" (keyup.enter)="goToLogin()" [placeholder]="demoPlaceholder"></textarea>
                     <div class="w-full flex items-center justify-between">
                         <div class="icons flex items-center justify-start gap-2">
                             <span title="Attach files">📎</span>
@@ -53,7 +42,7 @@
                 </div>
                 <div class="pills">
                     <a *ngFor="let app of appPills"
-                        class="pill border border-blue-200 dark:border-blue-800 brand-radial-bg-bl dark:text-blue-400"
+                        class="!text-slate-900 pill border border-blue-200 dark:border-blue-800 brand-radial-bg-bl dark:text-blue-400"
                         [href]="app.href" target="_blank" rel="noopener">{{ app.name }}</a>
                 </div>
             </div>
