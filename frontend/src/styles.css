@@ -7,5 +7,42 @@
 :root { color-scheme: light dark; }
 html, body { height: 100%; margin: 0; }
 body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, 'Apple Color Emoji', 'Segoe UI Emoji'; }
-.brand-radial-bg {background: radial-gradient(at 0% 100%, rgb(239 246 255) 0%, rgb(248 250 252) 100%);}
-.brand-radial-bg.dark,.dark .brand-radial-bg {background: radial-gradient(at 0% 100%, rgb(30 58 138) 0%, rgb(15 23 42) 100%);}
+/* Top Right */
+.brand-radial-bg-tr {
+  background: radial-gradient(at 100% 0%, rgb(239 246 255) 0%, rgb(248 250 252) 100%);
+}
+
+.brand-radial-bg-tr.dark,
+.dark .brand-radial-bg-tr {
+  background: radial-gradient(at 100% 0%, rgb(30 58 138) 0%, rgb(15 23 42) 100%);
+}
+
+/* Top Left */
+.brand-radial-bg-tl {
+  background: radial-gradient(at 0% 0%, rgb(239 246 255) 0%, rgb(248 250 252) 100%);
+}
+
+.brand-radial-bg-tl.dark,
+.dark .brand-radial-bg-tl {
+  background: radial-gradient(at 0% 0%, rgb(30 58 138) 0%, rgb(15 23 42) 100%);
+}
+
+/* Bottom Right */
+.brand-radial-bg-br {
+  background: radial-gradient(at 100% 100%, rgb(239 246 255) 0%, rgb(248 250 252) 100%);
+}
+
+.brand-radial-bg-br.dark,
+.dark .brand-radial-bg-br {
+  background: radial-gradient(at 100% 100%, rgb(30 58 138) 0%, rgb(15 23 42) 100%);
+}
+
+/* Bottom Left */
+.brand-radial-bg-bl {
+  background: radial-gradient(at 0% 100%, rgb(239 246 255) 0%, rgb(248 250 252) 100%);
+}
+
+.brand-radial-bg-bl.dark,
+.dark .brand-radial-bg-bl {
+  background: radial-gradient(at 0% 100%, rgb(30 58 138) 0%, rgb(15 23 42) 100%);
+}
