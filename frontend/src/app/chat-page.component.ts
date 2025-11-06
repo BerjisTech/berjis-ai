@@ -15,7 +15,7 @@ import { AuthService } from './auth.service';
 export class ChatPageComponent implements OnInit {
   env = environment;
   authed = false;
-  mx = 50; my = 50; fg = '#eff6ff'; bg = '#f8fafc';
+  mxpx = 0; mypx = 0; fg = '#eff6ff'; bg = '#f8fafc';
   demoInput = '';
   demoPlaceholder = "“Draft a weekly update from my Notes, summarize Docs A & B, and recommend 3 products for Marketplace”";
   year = new Date().getFullYear();
@@ -54,8 +54,14 @@ export class ChatPageComponent implements OnInit {
     this.themeIcon = dark ? "🌙" : "🌞";
   }
   onMove(e: MouseEvent) {
-    this.mx = Math.max(0, Math.min(100, (e.clientX / window.innerWidth) * 100));
-    this.my = Math.max(0, Math.min(100, (e.clientY / window.innerHeight) * 100));
+    const doc = document.documentElement;
+    const maxX = Math.max(doc.scrollWidth, window.innerWidth);
+    const maxY = Math.max(doc.scrollHeight, window.innerHeight);
+    // Use page coordinates so the glow stays under the cursor even when scrolled.
+    const x = (e as MouseEvent).pageX;
+    const y = (e as MouseEvent).pageY;
+    this.mxpx = Math.max(0, Math.min(maxX, x));
+    this.mypx = Math.max(0, Math.min(maxY, y));
   }
   goToLogin() {
     const ret = encodeURIComponent(window.location.href);
@@ -70,5 +76,4 @@ export class ChatPageComponent implements OnInit {
   toggleFaq(i: number) { this.openSet.has(i) ? this.openSet.delete(i) : this.openSet.add(i); }
   isOpen(i: number) { return this.openSet.has(i); }
 }
-
 

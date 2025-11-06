@@ -19,8 +19,8 @@
 </section>
 
 <ng-template #marketing>
-    <div class="w-screen overflow-x-hidden bg-[radial-gradient(320px_at_var(--mx,50%)_var(--my,50%),theme(colors.blue.50),theme(colors.slate.50))] dark:bg-[radial-gradient(320px_at_var(--mx,50%)_var(--my,50%),theme(colors.blue.900),theme(colors.slate.900))]"
-        (mousemove)="onMove($event)" [style.--mx]="mx + '%'" [style.--my]="my + '%'">
+    <div class="w-screen min-h-screen overflow-x-hidden bg-[radial-gradient(320px_at_var(--mxpx,50vw)_var(--mypx,50vh),theme(colors.blue.100),theme(colors.slate.50))] dark:bg-[radial-gradient(320px_at_var(--mxpx,50vw)_var(--mypx,50vh),theme(colors.blue.900),theme(colors.slate.900))]"
+        (mousemove)="onMove($event)" [style.--mxpx.px]="mxpx" [style.--mypx.px]="mypx">
         <section class="hero-landing min-h-screen !w-full">
             <div class="nav">
                 <div class="brand">Berjis<span class="accent">AI</span></div>
@@ -39,9 +39,9 @@
                 <p class="sub">Your private, self‑hosted assistant that works across Docs, Sheets, Notes, Marketplace,
                     Logistics, and more.</p>
                 <div class="prompt flex flex-col brand-radial-bg-bl">
-                    <input
-                        class="h-[300px] w-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-50 flex items-start justify-start"
-                        [(ngModel)]="demoInput" (keyup.enter)="goToLogin()" [placeholder]="demoPlaceholder" />
+                    <textarea
+                        class="h-[300px] w-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-50 outline-none focus:outline-none flex items-start justify-start"
+                        [(ngModel)]="demoInput" (keyup.enter)="goToLogin()" [placeholder]="demoPlaceholder" ></textarea>
                     <div class="w-full flex items-center justify-between">
                         <div class="icons flex items-center justify-start gap-2">
                             <span title="Attach files">📎</span>
