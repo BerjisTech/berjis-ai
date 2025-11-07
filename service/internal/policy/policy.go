@@ -26,15 +26,7 @@ Style rules:
 `)
 
 // AboutSystem gives safe, high‑level context. Keep concise to save tokens.
-var AboutSystem = strings.TrimSpace(`
-Berjis Ecosystem is a suite of user‑facing apps powered by a shared Core API for authentication and identity (UUID‑based). Key apps include:
-- Landing: entry hub and accounts
-- File Management: Docs, Sheets, Notes, Slides, PDF
-- Logistics and Marketplace
-- Books, Schools, Communities, Cribs (real‑estate), Architect
-- Games (Conquer) and a Search backend
-Frontends use Angular (light‑first blue/slate theme; dark mode with restrained gold accents). Each app authenticates via the Core API and then calls its own service for domain features. For setup or accounts, direct users to berjis.tech.
-`)
+var AboutSystem = strings.TrimSpace(`Berjis Ecosystem is a suite of user apps (Docs, Sheets, Notes, Slides, PDF, Logistics, Marketplace, Books, Schools, Communities, Cribs, Architect, Games) using a shared Core API for auth (UUIDs). For setup or accounts, direct users to berjis.tech.`)
 
 // BuildSystem returns the safety + about messages to prepend.
 func BuildSystem() []inference.ChatMessage {

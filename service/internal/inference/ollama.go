@@ -2,10 +2,12 @@ package inference
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"runtime"
 	"strings"
 	"time"
 )
@@ -35,6 +37,8 @@ type ChatRequest struct {
 	Options     map[string]any `json:"options,omitempty"`
 	// Important: do NOT omit 'stream' when false; Ollama defaults to streaming
 	Stream bool `json:"stream"`
+	// KeepAlive keeps the model loaded in memory for faster subsequent calls (e.g. "30m").
+	KeepAlive any `json:"keep_alive,omitempty"`
 }
 
 type ChatResponse struct {
@@ -44,6 +48,42 @@ type ChatResponse struct {
 		Content string `json:"content"`
 	} `json:"message"`
 	Done bool `json:"done"`
+}
+
+// ChatStream calls Ollama /api/chat with streaming enabled and invokes onChunk
+// for each JSON event until done or context cancellation. It returns the first
+// error encountered (other than io.EOF), or nil on clean completion.
+func (o *Ollama) ChatStream(ctx context.Context, req ChatRequest, onChunk func(ChatResponse) error) error {
+	req.Stream = true
+	body, _ := json.Marshal(req)
+	url := o.BaseURL + "/api/chat"
+	httpReq, _ := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
+	httpReq.Header.Set("Content-Type", "application/json")
+	resp, err := o.HTTP.Do(httpReq)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode >= 400 {
+		b, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
+		return fmt.Errorf("ollama error: %s: %s", resp.Status, string(b))
+	}
+	dec := json.NewDecoder(resp.Body)
+	for {
+		var ev ChatResponse
+		if err := dec.Decode(&ev); err != nil {
+			if err == io.EOF {
+				return nil
+			}
+			return err
+		}
+		if err := onChunk(ev); err != nil {
+			return err
+		}
+		if ev.Done {
+			return nil
+		}
+	}
 }
 
 func (o *Ollama) Chat(req ChatRequest) (ChatResponse, error) {
@@ -97,10 +137,11 @@ func (o *Ollama) Models() (TagsResponse, error) {
 
 // Text completion (generate)
 type generateRequest struct {
-	Model   string         `json:"model"`
-	Prompt  string         `json:"prompt"`
-	Stream  bool           `json:"stream"`
-	Options map[string]any `json:"options,omitempty"`
+	Model     string         `json:"model"`
+	Prompt    string         `json:"prompt"`
+	Stream    bool           `json:"stream"`
+	Options   map[string]any `json:"options,omitempty"`
+	KeepAlive any            `json:"keep_alive,omitempty"`
 }
 
 type generateResponse struct {
@@ -116,6 +157,10 @@ func (o *Ollama) Generate(model, prompt string, maxTokens int) (string, string, 
 	if maxTokens > 0 {
 		req.Options["num_predict"] = maxTokens
 	}
+	// Encourage faster CPU inference and keep model warm
+	req.Options["num_thread"] = runtimeNumCPU()
+	req.Options["num_batch"] = 256
+	req.KeepAlive = "30m"
 	body, _ := json.Marshal(req)
 	url := o.BaseURL + "/api/generate"
 	httpReq, _ := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
@@ -143,6 +188,10 @@ func (o *Ollama) Generate(model, prompt string, maxTokens int) (string, string, 
 	}
 	return out.Response, out.Model, nil
 }
+
+// runtimeNumCPU is a tiny shim to avoid importing runtime at call sites where not already needed.
+func runtimeNumCPU() int     { return runtimeNumCPUImpl() }
+func runtimeNumCPUImpl() int { return runtime.NumCPU() }
 
 // Embeddings
 type embeddingsRequest struct {

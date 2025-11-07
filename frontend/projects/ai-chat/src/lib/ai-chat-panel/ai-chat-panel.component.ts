@@ -25,6 +25,9 @@ export class AiChatPanelComponent implements OnInit, OnChanges {
   lastError: string | null = null;
   private reqSub: Subscription | null = null;
   themeIcon = '🌞';
+  private abort: AbortController | null = null;
+  models: string[] = [];
+  selectedModel = this.model;
 
   constructor(private ai: AiChatService) {}
 
@@ -34,6 +37,15 @@ export class AiChatPanelComponent implements OnInit, OnChanges {
     }
     const dark = document.documentElement.classList.contains('dark');
     this.themeIcon = dark ? '🌙' : '🌞';
+    this.selectedModel = this.model;
+    // Fetch available models to allow quick switching
+    this.ai.models(this.base).subscribe({
+      next: (r: any) => {
+        const list: string[] = (r?.data || r?.models || []).map((m: any) => m.name || m).filter((s: any) => typeof s === 'string');
+        this.models = list;
+      },
+      error: () => {}
+    });
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -52,31 +64,36 @@ export class AiChatPanelComponent implements OnInit, OnChanges {
     this.input = '';
     this.sending = true;
     const history = this.messages.slice(-10);
-    this.reqSub = this.ai.chat(this.base, { model: this.model, messages: history, temperature: 0.2 })
+    // Pre-append assistant bubble to stream into
+    this.messages.push({ role: 'assistant', content: '' });
+    const idx = this.messages.length - 1;
+    const ac = new AbortController();
+    this.abort = ac;
+    this.reqSub = this.ai.chatStream(this.base, { model: this.selectedModel || this.model, messages: history, temperature: 0.2 }, ac)
       .subscribe({
-        next: (resp: any) => {
-          const m: ChatMessage = resp?.data?.message || resp?.message;
-          if (m?.content) this.messages.push({ role: 'assistant', content: this.sanitize(m.content) });
-          this.messagesChange.emit([...this.messages]);
-          this.lastError = null;
+        next: (chunk) => {
+          if (chunk?.content != null) {
+            this.messages[idx].content += this.sanitize(chunk.content);
+            this.messagesChange.emit([...this.messages]);
+          }
         },
         error: (e: any) => {
           const status = e?.status;
           if (status === 401) {
-            this.messages.push({ role: 'assistant', content: 'Please sign in to use Berjis AI. Open berjis.tech, sign in, then come back.' });
-          } else if (e?.name === 'CanceledError') {
+            this.messages[idx].content = 'Please sign in to use Berjis AI. Open berjis.tech, sign in, then come back.';
+          } else if (e?.name === 'AbortError') {
             // interrupted by user
           } else {
-            this.messages.push({ role: 'assistant', content: 'Service is unavailable. Please try again shortly.' });
+            this.messages[idx].content = 'Service is unavailable. Please try again shortly.';
           }
           this.lastError = e?.message || 'unknown error';
-          this.sending = false; this.reqSub = null;
+          this.sending = false; this.reqSub = null; this.abort = null;
         },
-        complete: () => { this.sending = false; this.reqSub = null; }
+        complete: () => { this.sending = false; this.reqSub = null; this.abort = null; }
       });
   }
 
-  stop() { if (this.reqSub) { this.reqSub.unsubscribe(); this.reqSub = null; } this.sending = false; }
+  stop() { if (this.abort) { this.abort.abort(); this.abort = null; } if (this.reqSub) { this.reqSub.unsubscribe(); this.reqSub = null; } this.sending = false; }
 
   toggleTheme() {
     const el = document.documentElement;

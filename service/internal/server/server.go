@@ -1,9 +1,11 @@
 package server
 
 import (
+	"bufio"
 	"fmt"
 	"log"
 	"net/http"
+	"runtime"
 	"strings"
 	"time"
 
@@ -183,13 +185,15 @@ func New(opts Options) *fiber.App {
 			temp = 0.2
 		}
 		// Explicitly disable streaming; the gateway expects a single complete JSON response
-		res, err := ollama.Chat(inference.ChatRequest{Model: body.Model, Messages: msgs, Temperature: temp, Stream: false, Options: map[string]any{"num_predict": 256, "repeat_penalty": 1.07, "top_k": 50, "top_p": 0.9}})
+		// Tune for faster CPU inference and keep model warm
+		optsMap := map[string]any{"num_predict": 256, "repeat_penalty": 1.07, "top_k": 50, "top_p": 0.9, "num_thread": runtime.NumCPU(), "num_batch": 256}
+		res, err := ollama.Chat(inference.ChatRequest{Model: body.Model, Messages: msgs, Temperature: temp, Stream: false, Options: optsMap, KeepAlive: "30m"})
 		if err != nil {
 			metrics.incError()
 			lower := strings.ToLower(err.Error())
 			if strings.Contains(lower, "not found") {
 				if body.Model != opts.Config.DefaultModel {
-					if res2, err2 := ollama.Chat(inference.ChatRequest{Model: opts.Config.DefaultModel, Messages: msgs, Temperature: temp, Stream: false, Options: map[string]any{"num_predict": 256, "repeat_penalty": 1.07, "top_k": 50, "top_p": 0.9}}); err2 == nil {
+					if res2, err2 := ollama.Chat(inference.ChatRequest{Model: opts.Config.DefaultModel, Messages: msgs, Temperature: temp, Stream: false, Options: optsMap, KeepAlive: "30m"}); err2 == nil {
 						body.Model = opts.Config.DefaultModel
 						res = res2
 					} else {
@@ -215,6 +219,66 @@ func New(opts Options) *fiber.App {
 			_ = store.IncDaily("chats", body.Model, 1)
 		}
 		return c.JSON(fiber.Map{"success": true, "data": fiber.Map{"model": res.Model, "message": res.Message}})
+	})
+
+	// Streaming chat: newline-delimited JSON (NDJSON) forwarding Ollama stream.
+	app.Post("/v1/chat/stream", verify, func(c *fiber.Ctx) error {
+		var body ChatRequest
+		if err := c.BodyParser(&body); err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"success": false, "message": "invalid body"})
+		}
+		if len(body.Messages) == 0 {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"success": false, "message": "messages required"})
+		}
+		if strings.TrimSpace(body.Model) == "" {
+			body.Model = opts.Config.DefaultModel
+		}
+		sys := policy.BuildSystem()
+		msgs := make([]inference.ChatMessage, 0, len(sys)+len(body.Messages))
+		msgs = append(msgs, sys...)
+		for _, m := range body.Messages {
+			msgs = append(msgs, inference.ChatMessage{Role: m.Role, Content: m.Content})
+		}
+		// guard
+		userBlob := ""
+		for _, m := range body.Messages {
+			if m.Role == "user" {
+				userBlob += "\n" + m.Content
+			}
+		}
+		if opts.Config.SafetyStrict && policy.IsSensitiveText(userBlob) {
+			c.Set("Content-Type", "application/x-ndjson")
+			c.Set("Cache-Control", "no-cache")
+			c.Context().SetBodyStreamWriter(func(w *bufio.Writer) {
+				safe := "I can't share developer or internal details. Here's a public overview of Berjis and how to get started at berjis.tech."
+				fmt.Fprintf(w, "{\"model\":%q,\"message\":{\"role\":\"assistant\",\"content\":%q},\"done\":true}\n", body.Model, safe)
+				_ = w.Flush()
+			})
+			return nil
+		}
+		temp := body.Temperature
+		if temp <= 0 {
+			temp = 0.2
+		}
+		optsMap := map[string]any{"num_predict": 256, "repeat_penalty": 1.07, "top_k": 50, "top_p": 0.9, "num_thread": runtime.NumCPU(), "num_batch": 256}
+		c.Set("Content-Type", "application/x-ndjson")
+		c.Set("Cache-Control", "no-cache")
+		c.Context().SetBodyStreamWriter(func(w *bufio.Writer) {
+			_ = ollama.ChatStream(c.Context(), inference.ChatRequest{Model: body.Model, Messages: msgs, Temperature: temp, Stream: true, Options: optsMap, KeepAlive: "30m"}, func(ev inference.ChatResponse) error {
+				// escape quotes in content to keep valid JSON lines
+				content := strings.ReplaceAll(ev.Message.Content, "\"", "\\\"")
+				b := fmt.Sprintf("{\\\"model\\\":%q,\\\"message\\\":{\\\"role\\\":%q,\\\"content\\\":%q},\\\"done\\\":%t}\\n", ev.Model, ev.Message.Role, content, ev.Done)
+				if _, err := w.WriteString(b); err != nil {
+					return err
+				}
+				return w.Flush()
+			})
+		})
+		metrics.incChat(body.Model)
+		if store != nil {
+			_ = store.IncDaily("chats", body.Model, 1)
+		}
+		return nil
 	})
 
 	app.Post("/v1/completion", verify, func(c *fiber.Ctx) error {
