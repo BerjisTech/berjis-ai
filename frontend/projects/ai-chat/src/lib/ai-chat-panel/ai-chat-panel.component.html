@@ -1,7 +1,10 @@
 <section class="chat-panel">
   <header class="chat-header">
     <h3>Berjis AI</h3>
-    <div class="model">Model: {{ model }}</div>
+    <div class="model flex items-center gap-2">
+      <span>Model: {{ model }}</span>
+      <button class="icon-btn" (click)="toggleTheme()" title="Toggle theme">{{ themeIcon }}</button>
+    </div>
   </header>
   <div class="chat-body">
     <div *ngFor="let m of messages" class="msg" [class.user]="m.role==='user'" [class.assistant]="m.role==='assistant'">

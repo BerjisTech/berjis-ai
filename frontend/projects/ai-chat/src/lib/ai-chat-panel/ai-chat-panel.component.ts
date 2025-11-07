@@ -24,6 +24,7 @@ export class AiChatPanelComponent implements OnInit, OnChanges {
   sending = false;
   lastError: string | null = null;
   private reqSub: Subscription | null = null;
+  themeIcon = '🌞';
 
   constructor(private ai: AiChatService) {}
 
@@ -31,6 +32,8 @@ export class AiChatPanelComponent implements OnInit, OnChanges {
     if (this.presetMessages && this.presetMessages.length) {
       this.messages = this.presetMessages.slice(0, 10);
     }
+    const dark = document.documentElement.classList.contains('dark');
+    this.themeIcon = dark ? '🌙' : '🌞';
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -74,6 +77,14 @@ export class AiChatPanelComponent implements OnInit, OnChanges {
   }
 
   stop() { if (this.reqSub) { this.reqSub.unsubscribe(); this.reqSub = null; } this.sending = false; }
+
+  toggleTheme() {
+    const el = document.documentElement;
+    const nextDark = !el.classList.contains('dark');
+    el.classList.toggle('dark', nextDark);
+    localStorage.setItem('theme', nextDark ? 'dark' : 'light');
+    this.themeIcon = nextDark ? '🌙' : '🌞';
+  }
 
   private sanitize(content: string): string {
     const lines = content.split(/\r?\n/).filter(x=>x.trim().length>0);

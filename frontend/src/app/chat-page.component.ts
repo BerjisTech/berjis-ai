@@ -141,3 +141,5 @@ export class ChatPageComponent implements OnInit {
   toggleFaq(i: number) { this.openSet.has(i) ? this.openSet.delete(i) : this.openSet.add(i); }
   isOpen(i: number) { return this.openSet.has(i); }
 }
+
+
