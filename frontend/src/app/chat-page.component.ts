@@ -1,9 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { AiChatPanelComponent } from '@berjis/ai-chat';
+import { AiChatPanelComponent, ChatMessage } from '@berjis/ai-chat';
 import { environment } from '../environments/environment';
 import { AuthService } from './auth.service';
+import { ChatStorageService, ChatSession } from './chat-storage.service';
 
 @Component({
   selector: 'app-chat-page',
@@ -15,6 +17,10 @@ import { AuthService } from './auth.service';
 export class ChatPageComponent implements OnInit {
   env = environment;
   authed = false;
+  // fed into the chat panel; replaced on session switch to trigger reseed
+  seededMessages: ChatMessage[] = [];
+  sessions: ChatSession[] = [];
+  currentId: string | null = null;
   mxpx = 0; mypx = 0; fg = '#eff6ff'; bg = '#f8fafc';
   demoInput = '';
   demoPlaceholder = "“Draft a weekly update from my Notes, summarize Docs A & B, and recommend 3 products for Marketplace”";
@@ -35,10 +41,69 @@ export class ChatPageComponent implements OnInit {
     { name: 'Architect', href: 'https://architect.berjis.tech' },
     { name: 'Conquer', href: 'https://conquer.berjis.tech' }
   ];
-  constructor(private auth: AuthService) {}
+  constructor(private auth: AuthService, private route: ActivatedRoute, private storage: ChatStorageService) {}
   async ngOnInit() {
     this.authed = await this.auth.ensure();
     this.applyThemeColors();
+    // Preseed from query params (?q=...&seed=...)
+    const qp = this.route.snapshot.queryParamMap;
+    const q = (qp.get('q') || '').trim();
+    const seed = (qp.get('seed') || '').trim();
+    const msgs: ChatMessage[] = [];
+    if (q) msgs.push({ role: 'user', content: q });
+    if (seed) msgs.push({ role: 'assistant', content: seed });
+    // initialize sessions from storage
+    this.reloadSessions();
+    if (!this.sessions.length) {
+      const s = this.storage.create('New Chat', msgs);
+      this.sessions = this.storage.list();
+      this.currentId = s.id;
+    } else {
+      // prefer the most recent session
+      this.currentId = this.sessions[0].id;
+      if (msgs.length) {
+        // if query provided seed, create a fresh chat with it
+        const s = this.storage.create('New Chat', msgs);
+        this.sessions = this.storage.list();
+        this.currentId = s.id;
+      }
+    }
+    this.seededMessages = this.current()?.messages || [];
+  }
+  private reloadSessions() { this.sessions = this.storage.list(); }
+  current(): ChatSession | undefined { return this.currentId ? this.storage.get(this.currentId) : undefined; }
+  select(id: string) {
+    if (this.currentId === id) return;
+    this.currentId = id;
+    // Replace array reference so AiChatPanel re-seeds via OnChanges
+    this.seededMessages = [...(this.current()?.messages || [])];
+  }
+  newChat() {
+    const s = this.storage.create('New Chat', []);
+    this.reloadSessions();
+    this.select(s.id);
+  }
+  deleteChat(id: string, ev?: Event) {
+    ev?.stopPropagation();
+    this.storage.remove(id);
+    this.reloadSessions();
+    if (this.currentId === id) {
+      this.currentId = this.sessions[0]?.id || null;
+      this.seededMessages = this.current()?.messages || [];
+    }
+  }
+  private deriveTitle(msgs: ChatMessage[]): string {
+    const first = msgs.find(m => m.role === 'user')?.content?.trim() || '';
+    const t = first.replace(/\s+/g, ' ').slice(0, 48);
+    return t || 'New Chat';
+  }
+  onMessagesChange(msgs: ChatMessage[]) {
+    const now = Date.now();
+    const cur = this.current();
+    if (!cur) return;
+    const title = cur.title === 'New Chat' ? this.deriveTitle(msgs) : cur.title;
+    this.storage.upsert({ ...cur, title, updatedAt: now, messages: msgs });
+    this.reloadSessions();
   }
   toggleTheme() {
     const el = document.documentElement;
@@ -76,4 +141,3 @@ export class ChatPageComponent implements OnInit {
   toggleFaq(i: number) { this.openSet.has(i) ? this.openSet.delete(i) : this.openSet.add(i); }
   isOpen(i: number) { return this.openSet.has(i); }
 }
-

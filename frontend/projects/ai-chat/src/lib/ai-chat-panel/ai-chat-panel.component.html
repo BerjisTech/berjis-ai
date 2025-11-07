@@ -8,9 +8,18 @@
       <div class="bubble">{{ m.content }}</div>
     </div>
   </div>
+  <div class="thinking-divider" *ngIf="sending" aria-live="polite" aria-label="Thinking"></div>
   <footer class="chat-input">
-    <input [placeholder]="placeholder" [(ngModel)]="input" (keyup.enter)="send()" />
-    <button (click)="send()" [disabled]="sending">Send</button>
+    <div class="ai-frame w-full">
+      <div class="ai-inner w-full">
+        <input class="chat-text" [placeholder]="placeholder" [(ngModel)]="input" (keyup.enter)="send()" />
+        <button *ngIf="!sending" (click)="send()" class="icon-btn" title="Send">
+          <span class="material-symbols-outlined">arrow_upward</span>
+        </button>
+        <button *ngIf="sending" (click)="stop()" class="icon-btn stop" title="Stop">
+          <span class="material-symbols-outlined">stop</span>
+        </button>
+      </div>
+    </div>
   </footer>
 </section>
-

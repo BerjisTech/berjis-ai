@@ -1,9 +1,9 @@
 package policy
 
 import (
-    "regexp"
-    "strings"
-    "github.com/berjistech/berjis-ecosystem/ai/service/internal/inference"
+	"github.com/berjistech/berjis-ecosystem/ai/service/internal/inference"
+	"regexp"
+	"strings"
 )
 
 // SafetySystem is prepended to every chat to constrain the model.
@@ -17,6 +17,11 @@ Strict safety rules:
 - If asked for developer, admin, or operational details, politely refuse and offer general public guidance instead.
 - Keep responses user-facing: product usage, features, high‑level capabilities, and how to get started.
 - If a request may expose confidential info, respond: "I can’t share developer or internal details. Here’s a public overview instead…" and continue safely.
+
+Style rules:
+- Do not greet (no "Hello", "Welcome"); answer directly.
+- Prefer one concise paragraph unless the user asks for lists/steps.
+- Keep tone neutral and practical.
 `)
 
 // AboutSystem gives safe, high‑level context. Keep concise to save tokens.
@@ -32,24 +37,24 @@ Frontends use Angular (light‑first blue/slate theme; dark mode with restrained
 
 // BuildSystem returns the safety + about messages to prepend.
 func BuildSystem() []inference.ChatMessage {
-    return []inference.ChatMessage{
-        {Role: "system", Content: SafetySystem},
-        {Role: "system", Content: AboutSystem},
-    }
+	return []inference.ChatMessage{
+		{Role: "system", Content: SafetySystem},
+		{Role: "system", Content: AboutSystem},
+	}
 }
 
 // Basic sensitive intent detector (defense‑in‑depth). Keep lightweight and editable.
 var sensitiveRe = regexp.MustCompile(`(?i)\\b(jwk|jwks|private key|secret|env|dotenv|docker( compose)?|cloudflared|nginx\.conf|migrations?|schema|internal/|/api/internal|server\.go|jwt|database url|credentials?)\\b`)
 
 func IsSensitiveText(s string) bool {
-    return sensitiveRe.MatchString(s)
+	return sensitiveRe.MatchString(s)
 }
 
 // MatchedKeyword returns a representative keyword that triggered sensitivity, or "".
 func MatchedKeyword(s string) string {
-    m := sensitiveRe.FindStringSubmatch(s)
-    if len(m) >= 2 {
-        return strings.ToLower(m[1])
-    }
-    return ""
+	m := sensitiveRe.FindStringSubmatch(s)
+	if len(m) >= 2 {
+		return strings.ToLower(m[1])
+	}
+	return ""
 }
