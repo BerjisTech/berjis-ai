@@ -23,12 +23,12 @@
 .msg { display: flex; }
 .msg.user { justify-content: flex-end; }
 .msg.assistant { justify-content: flex-start; }
-.bubble { max-width: 72ch; padding: 0.6rem 0.8rem; border-radius: 1rem; background: #eff6ff; color: #0f172a; }
+.bubble { padding: 0.6rem 0.8rem; border-radius: 1rem; background: #eff6ff; color: #0f172a; }
 .msg.user .bubble { background: #2563eb; color: #f8fafc; }
 .chat-input { display:flex; gap: 0.5rem; border-top: 1px solid rgba(30,58,138,0.18); padding: 0.6rem; align-items: center; }
 /* Animated AI border frame (mirrors landing .ai-frame) */
 @keyframes aiPulse { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
-.ai-frame { position: relative; display: inline-block; padding: 2px; border-radius: 14px; background: linear-gradient(130deg, rgba(14,165,233,0.55), rgba(250,204,21,0.75), rgba(79,70,229,0.5)); background-size:200% 200%; animation: aiPulse 6s ease infinite; box-shadow: 0 0 35px rgba(37,99,235,0.25); }
+.ai-frame { position: relative; display: inline-block; padding: 2px; border-radius: 14px; background: linear-gradient(130deg, rgba(14,165,233,0.55), rgba(250,204,21,0.75), rgba(79,70,229,0.5)); background-size:200% 200%; animation: aiPulse 6s ease infinite; }
 .ai-inner { display:flex; align-items:center; gap:.5rem; background: rgba(255,255,255,0.92); color:#0f172a; border-radius:12px; padding: .4rem .5rem .4rem .7rem; backdrop-filter: blur(10px); }
 @media (prefers-color-scheme: dark) {
   .ai-inner { background: rgba(2,6,23,0.92); color:#f8fafc; }
@@ -41,7 +41,7 @@
 /* Neon thinking divider above input while sending */
 .thinking-divider { height: 4px; border-radius: 999px; margin: 0 .6rem; background: linear-gradient(90deg, rgba(56,189,248,.9), rgba(250,204,21,.95), rgba(129,140,248,.9)); background-size: 200% 200%; animation: aiPulse 2.2s ease-in-out infinite; box-shadow: 0 0 24px rgba(56,189,248,.4), 0 0 18px rgba(250,204,21,.35), 0 0 18px rgba(129,140,248,.35); }
 @media (prefers-color-scheme: dark) {
-  .chat-panel { background: rgba(2,6,23,0.7); border-color: rgba(51,65,85,0.5); box-shadow: 0 12px 28px rgba(2,6,23,0.45); }
+  .chat-panel { border-color: rgba(51,65,85,0.5); box-shadow: 0 12px 28px rgba(2,6,23,0.45); }
   .chat-header { border-bottom-color: rgba(51,65,85,0.5); }
   .chat-header h3 { color: #f8fafc; }
   .chat-header .model { color: #cbd5e1; }

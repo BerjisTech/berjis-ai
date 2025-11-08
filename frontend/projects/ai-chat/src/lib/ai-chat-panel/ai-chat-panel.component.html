@@ -1,34 +1,34 @@
-<section class="chat-panel">
+<section class="chat-panel !bg-slate-50 dark:!bg-slate-900 bg-radial-[at_0%_100%] from-blue-100 to-slate-50">
   <header class="chat-header">
     <h3>Berjis AI</h3>
     <div class="model flex items-center gap-2">
       <label class="text-sm text-slate-700 dark:text-slate-200">Model:</label>
-      <select class="model-select" [(ngModel)]="selectedModel">
+      <select class="model-select !text-slate-900 dark:!text-slate-200" [(ngModel)]="selectedModel">
         <option [ngValue]="model">{{ model }}</option>
         <option *ngFor="let m of models" [ngValue]="m">{{ m }}</option>
       </select>
       <label class="text-sm text-slate-700 dark:text-slate-200">API:</label>
-      <select class="model-select" [(ngModel)]="selectedBase">
+      <select class="model-select !text-slate-900 dark:!text-slate-200" [(ngModel)]="selectedBase">
         <option [ngValue]="base">Default</option>
         <option [ngValue]="'https://ai-api.berjis.tech'">Cloud</option>
         <option [ngValue]="'http://localhost:8094'">Local</option>
       </select>
-      <span class="pill" [class.pill-local]="apiLabel==='Local'" [class.pill-cloud]="apiLabel==='Cloud'" [class.pill-default]="apiLabel==='Default'">{{ apiLabel }}</span>
-      <span class="pill" *ngIf="modelWarm" [class.pill-warm]="modelWarm==='Warm'" [class.pill-cold]="modelWarm==='Cold'">{{ modelWarm }}</span>
+      <span class="!text-slate-900 dark:!text-slate-200 pill" [class.pill-local]="apiLabel==='Local'" [class.pill-cloud]="apiLabel==='Cloud'" [class.pill-default]="apiLabel==='Default'">{{ apiLabel }}</span>
+      <span class="!text-slate-900 dark:!text-slate-200 pill" *ngIf="modelWarm" [class.pill-warm]="modelWarm==='Warm'" [class.pill-cold]="modelWarm==='Cold'">{{ modelWarm }}</span>
       <span class="latency" *ngIf="ttfbMs>0">TTFB: {{ ttfbMs }} ms<span *ngIf="totalMs>0"> · Total: {{ totalMs }} ms</span></span>
       <button class="icon-btn" (click)="toggleTheme()" title="Toggle theme">{{ themeIcon }}</button>
     </div>
   </header>
-  <div class="chat-body">
-    <div *ngFor="let m of messages" class="msg" [class.user]="m.role==='user'" [class.assistant]="m.role==='assistant'">
-      <div class="bubble" [innerHTML]="render(m.content)"></div>
+  <div class="chat-body !flex !items-end !justify-start !flex-col w-[80%] mx-auto gap-4">
+    <div *ngFor="let m of messages" class="w-full !flex !items-end !justify-start !flex-col" [class.user]="m.role==='user'" [class.assistant]="m.role==='assistant'">
+      <div class="{{ m.role=='user' ? '!w-auto max-w-[500px] p-2 rounded-lg shadow shadow-blue-200 dark:shadow-blue-900' : '!w-[100%]'}} flex flex-col {{ m.role=='user' ? 'items-end' : 'items-start'}} justify-start {{ m.role=='user' ? '!bg-slate-200 dark:!bg-slate-800' : '!bg-transparent' }} !shadow-none !text-slate-900 dark:!text-slate-200" [innerHTML]="render(m.content)"></div>
     </div>
   </div>
   <div class="thinking-divider" *ngIf="sending" aria-live="polite" aria-label="Thinking"></div>
   <footer class="chat-input">
-    <div class="ai-frame w-full">
-      <div class="ai-inner w-full">
-        <input class="chat-text" [placeholder]="placeholder" [(ngModel)]="input" (keyup.enter)="send()" />
+    <div class="ai-frame shadow shadow-blue-200 dark:shadow-blue-900 w-full">
+      <div class="ai-inner !text-slate-900 dark:!text-slate-200 !bg-slate-50 dark:!bg-slate-900 w-full">
+        <input class="chat-text !bg-slate-50 dark:!bg-slate-900 outline-none focus:outline-none" [placeholder]="placeholder" [(ngModel)]="input" (keyup.enter)="send()" />
         <button *ngIf="!sending" (click)="send()" class="icon-btn" title="Send">
           <span class="material-symbols-outlined">arrow_upward</span>
         </button>

@@ -1,25 +1,21 @@
 <section *ngIf="authed; else marketing"
     class="relative w-screen h-screen overflow-x-hidden bg-[radial-gradient(320px_at_var(--mxpx,50vw)_var(--mypx,50vh),theme(colors.blue.100),theme(colors.slate.50))] dark:bg-[radial-gradient(320px_at_var(--mxpx,50vw)_var(--mypx,50vh),theme(colors.blue.900),theme(colors.slate.900))]"
     (mousemove)="onMove($event)" [style.--mxpx.px]="mxpx" [style.--mypx.px]="mypx">
-    <button
-        class="absolute top-4 right-4 inline-flex items-center justify-center rounded-md border border-blue-800/50 bg-white/70 text-blue-800 hover:bg-white/90 dark:border-blue-400/50 dark:bg-slate-900/60 dark:text-blue-400 w-9 h-9"
-        (click)="toggleTheme()" aria-label="Toggle theme">{{ themeIcon }}</button>
+    
     <div class="w-full h-full flex">
       <aside class="hidden md:block w-[260px] border-r border-blue-900/20 dark:border-slate-700/60 bg-white/70 dark:bg-slate-900/60 backdrop-blur p-2">
         <div class="flex items-center justify-between mb-2">
           <span class="text-xs uppercase tracking-widest text-slate-600 dark:text-slate-300">Chats</span>
           <button class="text-xs text-blue-600 dark:text-amber-300" (click)="newChat()">New</button>
         </div>
-        <div class="flex flex-col gap-1">
+        <div class="flex flex-col">
           <button *ngFor="let s of sessions"
                   (click)="select(s.id)"
-                  class="w-full text-left rounded-md px-2 py-1 border transition-colors"
-                  [class.bg-blue-50]="s.id===currentId"
-                  [class.border-blue-300]="s.id===currentId"
+                  class="group !bg-blue-50 hover:!bg-slate-200 dark:!bg-blue-950  w-full text-left px-2 p-2 transition-colors {{s.id===currentId && '!bg-slate-200 dark:!bg-slate-900'}} "
                   [class.border-transparent]="s.id!==currentId">
             <div class="flex items-center justify-between gap-2">
               <span class="truncate text-sm text-slate-800 dark:text-slate-200">{{ s.title || 'New Chat' }}</span>
-              <button class="text-slate-400 hover:text-red-500 text-xs" title="Delete" (click)="deleteChat(s.id, $event)">✕</button>
+              <button class="hidden group-hover:block text-slate-400 hover:text-red-500 text-xs" title="Delete" (click)="deleteChat(s.id, $event)">✕</button>
             </div>
             <div class="text-[10px] text-slate-500">{{ s.updatedAt | date:'short' }}</div>
           </button>
@@ -36,11 +32,11 @@
 </section>
 
 <ng-template #marketing>
-    <div class="w-screen min-h-screen overflow-x-hidden bg-[radial-gradient(320px_at_var(--mxpx,50vw)_var(--mypx,50vh),theme(colors.blue.100),theme(colors.slate.50))] dark:bg-[radial-gradient(320px_at_var(--mxpx,50vw)_var(--mypx,50vh),theme(colors.blue.900),theme(colors.slate.900))]"
+    <div class="w-full min-h-screen overflow-x-hidden bg-[radial-gradient(320px_at_var(--mxpx,50vw)_var(--mypx,50vh),theme(colors.blue.100),theme(colors.slate.50))] dark:bg-[radial-gradient(320px_at_var(--mxpx,50vw)_var(--mypx,50vh),theme(colors.blue.900),theme(colors.slate.900))]"
         (mousemove)="onMove($event)" [style.--mxpx.px]="mxpx" [style.--mypx.px]="mypx">
         <section class="hero-landing min-h-screen !w-full">
             <div class="nav">
-                <div class="brand">Berjis<span class="accent">AI</span></div>
+                <div class="brand !text-slate-950 dark:!text-blue-100">Berjis<span class="accent">AI</span></div>
                 <div class="actions flex items-center gap-2">
                     <button
                         class="inline-flex items-center justify-center rounded-md border border-blue-800/50 bg-white/70 text-blue-800 hover:bg-white/90 dark:border-blue-400/50 dark:bg-slate-900/60 dark:text-blue-400 w-9 h-9"
@@ -52,12 +48,12 @@
                 </div>
             </div>
             <div class="center">
-                <h2 class="tagline">Get the most out of your <span class="gold">Berjis Ecosystem</span></h2>
+                <h2 class="tagline !text-slate-950 dark:!text-blue-100">Get the most out of your <span class="gold">Berjis Ecosystem</span></h2>
                 <p class="sub">Your private, self‑hosted assistant that works across Docs, Sheets, Notes, Marketplace,
                     Logistics, and more.</p>
                 <div class="prompt flex flex-col brand-radial-bg-bl">
                     <textarea
-                        class="h-[300px] w-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-50 outline-none focus:outline-none flex items-start justify-start"
+                        class="h-[300px] w-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-50 outline-none focus:outline-none flex items-start justify-start p-2"
                         [(ngModel)]="demoInput" (keyup.enter)="goToLogin()" [placeholder]="demoPlaceholder"></textarea>
                     <div class="w-full flex items-center justify-between">
                         <div class="icons flex items-center justify-start gap-2">
@@ -70,7 +66,7 @@
                 </div>
                 <div class="pills">
                     <a *ngFor="let app of appPills"
-                        class="!text-slate-900 pill border border-blue-200 dark:border-blue-800 brand-radial-bg-bl dark:text-blue-400"
+                        class="!text-slate-900 pill border border-blue-200 dark:border-blue-800 brand-radial-bg-bl dark:!text-blue-400"
                         [href]="app.href" target="_blank" rel="noopener">{{ app.name }}</a>
                 </div>
             </div>
@@ -80,27 +76,27 @@
             <div
                 class="!text-slate-900 dark:!text-slate-50 grid gap-2 !grid-cols-1 lg:!grid-cols-3 grid-flow-dense auto-rows-[200px]">
                 <article
-                    class="brand-radial-bg-br col-span-1 row-span-3 shadow shadow-blue-100 dark:shadow-blue-800 p-2">
+                    class="brand-radial-bg-br col-span-1 row-span-3 shadow shadow-blue-200 dark:shadow-blue-800 p-2">
                     <h3 class="text-xl">Summarize & explain</h3>
                     <p>Turn long docs, notes, or PDFs into clear summaries and next steps.</p>
                 </article>
                 <article
-                    class="brand-radial-bg-bl col-span-1 row-span-2 shadow shadow-blue-100 dark:shadow-blue-800 p-2">
+                    class="brand-radial-bg-bl col-span-1 row-span-2 shadow shadow-blue-200 dark:shadow-blue-800 p-2">
                     <h3 class="text-xl">Write & polish</h3>
                     <p>Draft emails, proposals, and posts in your tone.</p>
                 </article>
                 <article
-                    class="brand-radial-bg-br col-span-1 row-span-1 shadow shadow-blue-100 dark:shadow-blue-800 p-2">
+                    class="brand-radial-bg-br col-span-1 row-span-1 shadow shadow-blue-200 dark:shadow-blue-800 p-2">
                     <h3 class="text-xl">Plan & schedule</h3>
                     <p>Create task lists, timelines, and reminders across apps.</p>
                 </article>
                 <article
-                    class="brand-radial-bg-tr col-span-1 row-span-1 shadow shadow-blue-100 dark:shadow-blue-800 p-2">
+                    class="brand-radial-bg-tr col-span-1 row-span-1 shadow shadow-blue-200 dark:shadow-blue-800 p-2">
                     <h3 class="text-xl">Analyze & recommend</h3>
                     <p>Explore shop performance and inventory trends.</p>
                 </article>
                 <article
-                    class="brand-radial-bg-tl col-span-2 row-span-1 shadow shadow-blue-100 dark:shadow-blue-800 p-2">
+                    class="brand-radial-bg-tl col-span-2 row-span-1 shadow shadow-blue-200 dark:shadow-blue-800 p-2">
                     <h3 class="text-xl">Help build</h3>
                     <p>Suggest components and patterns in Architect.</p>
                 </article>
@@ -110,7 +106,7 @@
         <section class="faq">
             <h3 class="text-xl">Frequently asked questions</h3>
             <div class="accordion">
-                <div class="item !text-slate-900 dark:!text-slate-300 brand-radial-bg-bl flex flex-col items-start justify-start gap-2"
+                <div class="!border-none shadow-blue-200 dark:shadow-blue-800 item !text-slate-900 dark:!text-slate-300 brand-radial-bg-bl flex flex-col items-start justify-start gap-2"
                     *ngFor="let f of faqs; let i = index">
                     <button class="q text-slate-900 dark:text-slate-300 text-lg font-semibold" (click)="toggleFaq(i)">
                         <span class="icon">{{ isOpen(i) ? '−' : '+' }}</span>
