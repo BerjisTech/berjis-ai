@@ -1,5 +1,11 @@
 import { CommonModule } from '@angular/common';
+
+
 import { Component, EventEmitter, Input, OnInit, OnChanges, Output, SimpleChanges } from '@angular/core';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { marked } from 'marked';
+import DOMPurify from 'dompurify';
+import hljs from 'highlight.js/lib/common';
 import { Subscription } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { AiChatService, ChatMessage } from '../ai-chat.service';
@@ -28,8 +34,25 @@ export class AiChatPanelComponent implements OnInit, OnChanges {
   private abort: AbortController | null = null;
   models: string[] = [];
   selectedModel = this.model;
+  selectedBase = this.base;
+  // timing metrics
+  private tStart = 0;
+  ttfbMs = 0;
+  totalMs = 0;
+  get apiLabel(): 'Local'|'Cloud'|'Default' {
+    const b = this.selectedBase || this.base || '';
+    if (b.includes('localhost') || b.startsWith('http://127.0.0.1')) return 'Local';
+    if (b.startsWith('https://')) return 'Cloud';
+    return 'Default';
+  }
+  get modelWarm(): 'Warm'|'Cold'|'' {
+    if (this.sending && this.ttfbMs === 0) return '';
+    if (this.ttfbMs > 0 && this.ttfbMs <= 1200) return 'Warm';
+    if (this.ttfbMs > 0) return 'Cold';
+    return '';
+  }
 
-  constructor(private ai: AiChatService) {}
+  constructor(private ai: AiChatService, private sanitizer: DomSanitizer) {}
 
   ngOnInit(): void {
     if (this.presetMessages && this.presetMessages.length) {
@@ -38,11 +61,16 @@ export class AiChatPanelComponent implements OnInit, OnChanges {
     const dark = document.documentElement.classList.contains('dark');
     this.themeIcon = dark ? '🌙' : '🌞';
     this.selectedModel = this.model;
-    // Fetch available models to allow quick switching
+    this.selectedBase = this.base;
+    // Fetch available models to allow quick switching (limit to llama for now)
     this.ai.models(this.base).subscribe({
       next: (r: any) => {
         const list: string[] = (r?.data || r?.models || []).map((m: any) => m.name || m).filter((s: any) => typeof s === 'string');
-        this.models = list;
+        this.models = list.filter(m => (''+m).toLowerCase().includes('llama'));
+        if (!this.models.includes(this.selectedModel)) {
+          const fallback = this.models.find(m => m.toLowerCase().startsWith('llama3.1')) || 'llama3.1:8b';
+          this.selectedModel = fallback;
+        }
       },
       error: () => {}
     });
@@ -60,6 +88,7 @@ export class AiChatPanelComponent implements OnInit, OnChanges {
   send() {
     const text = this.input.trim();
     if (!text || this.sending) return;
+    this.ttfbMs = 0; this.totalMs = 0; this.tStart = performance.now();
     this.messages.push({ role: 'user', content: text });
     this.input = '';
     this.sending = true;
@@ -69,9 +98,12 @@ export class AiChatPanelComponent implements OnInit, OnChanges {
     const idx = this.messages.length - 1;
     const ac = new AbortController();
     this.abort = ac;
-    this.reqSub = this.ai.chatStream(this.base, { model: this.selectedModel || this.model, messages: history, temperature: 0.2 }, ac)
+    this.reqSub = this.ai.chatStream(this.selectedBase || this.base, { model: this.selectedModel || this.model, messages: history, temperature: 0.2 }, ac)
       .subscribe({
         next: (chunk) => {
+          if (this.ttfbMs === 0) {
+            this.ttfbMs = Math.round(performance.now() - this.tStart);
+          }
           if (chunk?.content != null) {
             this.messages[idx].content += this.sanitize(chunk.content);
             this.messagesChange.emit([...this.messages]);
@@ -87,9 +119,9 @@ export class AiChatPanelComponent implements OnInit, OnChanges {
             this.messages[idx].content = 'Service is unavailable. Please try again shortly.';
           }
           this.lastError = e?.message || 'unknown error';
-          this.sending = false; this.reqSub = null; this.abort = null;
+          this.sending = false; this.reqSub = null; this.abort = null; this.totalMs = Math.round(performance.now() - this.tStart);
         },
-        complete: () => { this.sending = false; this.reqSub = null; this.abort = null; }
+        complete: () => { this.sending = false; this.reqSub = null; this.abort = null; this.totalMs = Math.round(performance.now() - this.tStart); }
       });
   }
 
@@ -112,4 +144,19 @@ export class AiChatPanelComponent implements OnInit, OnChanges {
     }
     return content;
   }
+
+  render(md: string): SafeHtml {
+    // Configure marked once (idempotent)
+    marked.setOptions({ gfm: true, breaks: true });
+    const html = marked.parse(md || '') as string;
+    const clean = DOMPurify.sanitize(html as any, { USE_PROFILES: { html: true } } as any) as unknown as string;
+    return this.sanitizer.bypassSecurityTrustHtml(clean);
+  }
 }
+
+
+
+
+
+
+

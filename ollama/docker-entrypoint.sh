@@ -29,5 +29,13 @@ ensure_model() {
 ensure_model "$DEFAULT_MODEL"
 ensure_model "$EMBEDDINGS_MODEL"
 
+# Warm the default model into GPU/VRAM so first user token is instant.
+# This is a quick 1-token run; the long-lived server is already running in background.
+if [ -n "$DEFAULT_MODEL" ]; then
+  echo "[ollama-bootstrap] warming $DEFAULT_MODEL"
+  # Ignore errors so container still comes up even if model isn't present yet.
+  ollama run "$DEFAULT_MODEL" -p "ping" >/dev/null 2>&1 || true
+fi
+
 # Bring server to foreground (so container stops when it exits)
 wait "$PID"

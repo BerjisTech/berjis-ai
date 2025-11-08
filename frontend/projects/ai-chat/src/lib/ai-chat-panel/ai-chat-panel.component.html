@@ -7,12 +7,21 @@
         <option [ngValue]="model">{{ model }}</option>
         <option *ngFor="let m of models" [ngValue]="m">{{ m }}</option>
       </select>
+      <label class="text-sm text-slate-700 dark:text-slate-200">API:</label>
+      <select class="model-select" [(ngModel)]="selectedBase">
+        <option [ngValue]="base">Default</option>
+        <option [ngValue]="'https://ai-api.berjis.tech'">Cloud</option>
+        <option [ngValue]="'http://localhost:8094'">Local</option>
+      </select>
+      <span class="pill" [class.pill-local]="apiLabel==='Local'" [class.pill-cloud]="apiLabel==='Cloud'" [class.pill-default]="apiLabel==='Default'">{{ apiLabel }}</span>
+      <span class="pill" *ngIf="modelWarm" [class.pill-warm]="modelWarm==='Warm'" [class.pill-cold]="modelWarm==='Cold'">{{ modelWarm }}</span>
+      <span class="latency" *ngIf="ttfbMs>0">TTFB: {{ ttfbMs }} ms<span *ngIf="totalMs>0"> · Total: {{ totalMs }} ms</span></span>
       <button class="icon-btn" (click)="toggleTheme()" title="Toggle theme">{{ themeIcon }}</button>
     </div>
   </header>
   <div class="chat-body">
     <div *ngFor="let m of messages" class="msg" [class.user]="m.role==='user'" [class.assistant]="m.role==='assistant'">
-      <div class="bubble">{{ m.content }}</div>
+      <div class="bubble" [innerHTML]="render(m.content)"></div>
     </div>
   </div>
   <div class="thinking-divider" *ngIf="sending" aria-live="polite" aria-label="Thinking"></div>

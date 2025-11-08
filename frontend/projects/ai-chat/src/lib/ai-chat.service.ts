@@ -38,9 +38,11 @@ export class AiChatService {
             buffer += decoder.decode(value, { stream: true });
             let idx;
             while ((idx = buffer.indexOf('\n')) >= 0) {
-              const line = buffer.slice(0, idx).trim();
+              let line = buffer.slice(0, idx).trim();
               buffer = buffer.slice(idx + 1);
               if (!line) continue;
+              // Support both NDJSON and SSE ('data: {...}')
+              if (line.startsWith('data:')) line = line.slice(5).trim();
               try {
                 const obj = JSON.parse(line);
                 const msg = obj?.message;

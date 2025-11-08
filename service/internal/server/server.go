@@ -2,6 +2,7 @@ package server
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -221,7 +222,7 @@ func New(opts Options) *fiber.App {
 		return c.JSON(fiber.Map{"success": true, "data": fiber.Map{"model": res.Model, "message": res.Message}})
 	})
 
-	// Streaming chat: newline-delimited JSON (NDJSON) forwarding Ollama stream.
+	// Streaming chat via SSE (works better through proxies like Cloudflare/Nginx).
 	app.Post("/v1/chat/stream", verify, func(c *fiber.Ctx) error {
 		var body ChatRequest
 		if err := c.BodyParser(&body); err != nil {
@@ -247,11 +248,28 @@ func New(opts Options) *fiber.App {
 			}
 		}
 		if opts.Config.SafetyStrict && policy.IsSensitiveText(userBlob) {
-			c.Set("Content-Type", "application/x-ndjson")
+			c.Set("Content-Type", "text/event-stream")
 			c.Set("Cache-Control", "no-cache")
+			c.Set("Connection", "keep-alive")
+			c.Set("X-Accel-Buffering", "no")
 			c.Context().SetBodyStreamWriter(func(w *bufio.Writer) {
 				safe := "I can't share developer or internal details. Here's a public overview of Berjis and how to get started at berjis.tech."
-				fmt.Fprintf(w, "{\"model\":%q,\"message\":{\"role\":\"assistant\",\"content\":%q},\"done\":true}\n", body.Model, safe)
+				type msg struct {
+					Role    string `json:"role"`
+					Content string `json:"content"`
+				}
+				type ev struct {
+					Model   string `json:"model"`
+					Message msg    `json:"message"`
+				}
+				e := ev{Model: body.Model}
+				e.Message.Role = "assistant"
+				e.Message.Content = safe
+				b, _ := json.Marshal(e)
+				fmt.Fprintf(w, "event: token\n")
+				fmt.Fprintf(w, "data: %s\n\n", string(b))
+				fmt.Fprintf(w, "event: done\n")
+				fmt.Fprintf(w, "data: {}\n\n")
 				_ = w.Flush()
 			})
 			return nil
@@ -261,15 +279,30 @@ func New(opts Options) *fiber.App {
 			temp = 0.2
 		}
 		optsMap := map[string]any{"num_predict": 256, "repeat_penalty": 1.07, "top_k": 50, "top_p": 0.9, "num_thread": runtime.NumCPU(), "num_batch": 256}
-		c.Set("Content-Type", "application/x-ndjson")
+		c.Set("Content-Type", "text/event-stream")
 		c.Set("Cache-Control", "no-cache")
+		c.Set("Connection", "keep-alive")
+		c.Set("X-Accel-Buffering", "no")
 		c.Context().SetBodyStreamWriter(func(w *bufio.Writer) {
-			_ = ollama.ChatStream(c.Context(), inference.ChatRequest{Model: body.Model, Messages: msgs, Temperature: temp, Stream: true, Options: optsMap, KeepAlive: "30m"}, func(ev inference.ChatResponse) error {
-				// escape quotes in content to keep valid JSON lines
-				content := strings.ReplaceAll(ev.Message.Content, "\"", "\\\"")
-				b := fmt.Sprintf("{\\\"model\\\":%q,\\\"message\\\":{\\\"role\\\":%q,\\\"content\\\":%q},\\\"done\\\":%t}\\n", ev.Model, ev.Message.Role, content, ev.Done)
-				if _, err := w.WriteString(b); err != nil {
-					return err
+			_ = ollama.ChatStream(c.Context(), inference.ChatRequest{Model: body.Model, Messages: msgs, Temperature: temp, Stream: true, Options: optsMap, KeepAlive: "30m"}, func(ch inference.ChatResponse) error {
+				type msg2 struct {
+					Role    string `json:"role"`
+					Content string `json:"content"`
+				}
+				type ev struct {
+					Model   string `json:"model"`
+					Message msg2   `json:"message"`
+					Done    bool   `json:"done"`
+				}
+				e := ev{Model: ch.Model, Done: ch.Done}
+				e.Message.Role = ch.Message.Role
+				e.Message.Content = ch.Message.Content
+				b, _ := json.Marshal(e)
+				fmt.Fprintf(w, "event: token\n")
+				fmt.Fprintf(w, "data: %s\n\n", string(b))
+				if ch.Done {
+					fmt.Fprintf(w, "event: done\n")
+					fmt.Fprintf(w, "data: {}\n\n")
 				}
 				return w.Flush()
 			})

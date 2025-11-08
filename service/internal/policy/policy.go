@@ -23,6 +23,7 @@ Style rules:
 - Do not greet (no "Hello", "Welcome"); answer directly.
 - Prefer one concise paragraph unless the user asks for lists/steps.
 - Keep tone neutral and practical.
+- Format with Markdown when helpful: use headings, bullet/numbered lists, code fences for commands/config, blockquotes for callouts, and tables for structured data.
 `)
 
 // AboutSystem gives safe, high‑level context. Keep concise to save tokens.

@@ -2081,6 +2081,13 @@
   dependencies:
     "@types/node" "*"
 
+"@types/dompurify@^3.2.0":
+  version "3.2.0"
+  resolved "https://registry.yarnpkg.com/@types/dompurify/-/dompurify-3.2.0.tgz#56610bf3e4250df57744d61fbd95422e07dfb840"
+  integrity sha512-Fgg31wv9QbLDA0SpTOXO3MaxySc4DKGLi8sna4/Utjo4r3ZRPdCt4UQee8BWr+Q5z21yifghREPJGYaEOEIACg==
+  dependencies:
+    dompurify "*"
+
 "@types/estree@1.0.8", "@types/estree@^1.0.0", "@types/estree@^1.0.5":
   version "1.0.8"
   resolved "https://registry.yarnpkg.com/@types/estree/-/estree-1.0.8.tgz#958b91c991b1867ced318bedea0e215ee050726e"
@@ -2225,6 +2232,11 @@
   integrity sha512-MK9V6NzAS1+Ud7JV9lJLFqW85VbC9dq3LmwZCuBe4wBDgKC0Kj/jd8Xl+nSviU+Qc3+m7umHHyHg//2KSa0a0Q==
   dependencies:
     "@types/node" "*"
+
+"@types/trusted-types@^2.0.7":
+  version "2.0.7"
+  resolved "https://registry.yarnpkg.com/@types/trusted-types/-/trusted-types-2.0.7.tgz#baccb07a970b91707df3a3e8ba6896c57ead2d11"
+  integrity sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==
 
 "@types/ws@^8.5.5":
   version "8.18.1"
@@ -3212,6 +3224,13 @@ domhandler@^5.0.2, domhandler@^5.0.3:
   dependencies:
     domelementtype "^2.3.0"
 
+dompurify@*, dompurify@^3.3.0:
+  version "3.3.0"
+  resolved "https://registry.yarnpkg.com/dompurify/-/dompurify-3.3.0.tgz#aaaadbb83d87e1c2fbb066452416359e5b62ec97"
+  integrity sha512-r+f6MYR1gGN1eJv0TVQbhA7if/U7P87cdPl3HN5rikqaBSBxLiCb/b9O+2eG0cxz0ghyU+mU1QkbsOwERMYlWQ==
+  optionalDependencies:
+    "@types/trusted-types" "^2.0.7"
+
 domutils@^3.0.1:
   version "3.2.2"
   resolved "https://registry.yarnpkg.com/domutils/-/domutils-3.2.2.tgz#edbfe2b668b0c1d97c24baf0f1062b132221bc78"
@@ -3888,6 +3907,11 @@ hasown@^2.0.2:
   integrity sha512-0hJU9SCPvmMzIBdZFqNPXWa6dqh7WdH0cII9y+CyS8rG3nL48Bclra9HmKhVVUHyPWNH5Y7xDwAB7bfgSjkUMQ==
   dependencies:
     function-bind "^1.1.2"
+
+highlight.js@^11.11.1:
+  version "11.11.1"
+  resolved "https://registry.yarnpkg.com/highlight.js/-/highlight.js-11.11.1.tgz#fca06fa0e5aeecf6c4d437239135fabc15213585"
+  integrity sha512-Xwwo44whKBVCYoliBQwaPvtd/2tYFkRQtXDWj1nackaV2JPXx3L0+Jvd8/qCJ2p+ML0/XVkJ2q+Mr+UVdpJK5w==
 
 hosted-git-info@^7.0.0:
   version "7.0.2"
@@ -4568,6 +4592,11 @@ make-fetch-happen@^13.0.0, make-fetch-happen@^13.0.1:
     proc-log "^4.2.0"
     promise-retry "^2.0.1"
     ssri "^10.0.0"
+
+marked@^17.0.0:
+  version "17.0.0"
+  resolved "https://registry.yarnpkg.com/marked/-/marked-17.0.0.tgz#62ae3f2ea8346025ae24a24ad4b78982655ef4e3"
+  integrity sha512-KkDYEWEEiYJw/KC+DVm1zzlpMQSMIu6YRltkcCvwheCp8HWPXCk9JwOmHJKBlGfzcpzcIt6x3sMnTsRm/51oDg==
 
 math-intrinsics@^1.1.0:
   version "1.1.0"
