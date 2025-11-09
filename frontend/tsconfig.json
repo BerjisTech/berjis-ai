@@ -23,6 +23,9 @@
     "paths": {
       "@berjis/ai-chat": [
         "projects/ai-chat/src/public-api.ts"
+      ],
+      "@berjis/angular-auth": [
+        "../../clients/angular-auth/src/index.ts"
       ]
     }
   }

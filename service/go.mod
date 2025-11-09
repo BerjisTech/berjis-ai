@@ -3,6 +3,7 @@ module github.com/berjistech/berjis-ecosystem/ai/service
 go 1.22
 
 require (
+	github.com/berjistech/berjis-ecosystem/shared/coreauth v0.0.0
 	github.com/gofiber/fiber/v2 v2.52.5
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/lib/pq v1.10.9
@@ -10,6 +11,7 @@ require (
 
 require (
 	github.com/andybalholm/brotli v1.0.5 // indirect
+	github.com/golang-jwt/jwt/v5 v5.2.1 // indirect
 	github.com/google/uuid v1.5.0 // indirect
 	github.com/klauspost/compress v1.17.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
@@ -23,3 +25,5 @@ require (
 	github.com/valyala/tcplisten v1.0.0 // indirect
 	golang.org/x/sys v0.15.0 // indirect
 )
+
+replace github.com/berjistech/berjis-ecosystem/shared/coreauth => ../../shared/coreauth

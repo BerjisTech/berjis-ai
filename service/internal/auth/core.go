@@ -2,12 +2,15 @@ package auth
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+
+	coreauth "github.com/berjistech/berjis-ecosystem/shared/coreauth"
 )
 
 type VerifyClient interface {
@@ -17,6 +20,7 @@ type VerifyClient interface {
 type Options struct {
 	CoreAPIBase string
 	HTTP        VerifyClient
+	Verifier    *coreauth.Verifier
 }
 
 type VerifyResp struct {
@@ -28,10 +32,11 @@ type VerifyResp struct {
 	} `json:"data"`
 }
 
-// RequireAuth verifies the bearer/cookie token against Core API /v1/auth/verify.
-// On success, it sets c.Locals("uuid") and c.Locals("email").
+// RequireAuth validates bearer/cookie tokens using the shared JWKS verifier with a
+// remote Core API fallback. On success, it sets c.Locals("uuid") and c.Locals("email").
 func RequireAuth(opts Options) fiber.Handler {
 	httpClient := opts.HTTP
+	verifier := opts.Verifier
 	var mu sync.Mutex
 	cache := map[string]struct {
 		uuid, email string
@@ -39,7 +44,6 @@ func RequireAuth(opts Options) fiber.Handler {
 	}{}
 	const ttl = 2 * time.Minute
 	return func(c *fiber.Ctx) error {
-		// Pass through bearer or cookie
 		token := ""
 		if authz := c.Get("Authorization"); strings.HasPrefix(strings.ToLower(authz), "bearer ") {
 			token = strings.TrimSpace(authz[7:])
@@ -52,7 +56,25 @@ func RequireAuth(opts Options) fiber.Handler {
 		if token == "" {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"success": false, "message": "missing token"})
 		}
-		// Fast path: tiny in-memory cache by bearer token
+
+		if verifier != nil {
+			if claims, err := verifier.Verify(token); err == nil {
+				c.Locals("uuid", claims.UUID)
+				c.Locals("email", claims.Email)
+				return c.Next()
+			} else if errors.Is(err, coreauth.ErrTokenInvalid) || errors.Is(err, coreauth.ErrTokenExpired) || errors.Is(err, coreauth.ErrTokenMissing) {
+				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"success": false, "message": "invalid token"})
+			} else if !errors.Is(err, coreauth.ErrJWKSUnavailable) {
+				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"success": false, "message": "invalid token"})
+			}
+			// ErrJWKSUnavailable -> fall back to remote verification.
+		}
+
+		if httpClient == nil || strings.TrimSpace(opts.CoreAPIBase) == "" {
+			return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{"success": false, "message": "auth verify failed"})
+		}
+
+		// Remote fallback with tiny in-memory cache.
 		mu.Lock()
 		if ent, ok := cache[token]; ok && time.Now().Before(ent.exp) {
 			mu.Unlock()
@@ -60,8 +82,8 @@ func RequireAuth(opts Options) fiber.Handler {
 			c.Locals("email", ent.email)
 			return c.Next()
 		}
-		// Slow path: verify via Core API
 		mu.Unlock()
+
 		req, _ := http.NewRequest(http.MethodPost, strings.TrimRight(opts.CoreAPIBase, "/")+"/v1/auth/verify", http.NoBody)
 		req.Header.Set("Authorization", "Bearer "+token)
 		resp, err := httpClient.Do(req)
@@ -78,8 +100,8 @@ func RequireAuth(opts Options) fiber.Handler {
 		}
 		c.Locals("uuid", vr.Data.UUID)
 		c.Locals("email", vr.Data.Email)
+
 		mu.Lock()
-		// prune expired opportunistically
 		now := time.Now()
 		for k, v := range cache {
 			if now.After(v.exp) {
