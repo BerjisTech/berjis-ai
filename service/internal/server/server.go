@@ -15,6 +15,7 @@ import (
 	db "github.com/berjistech/berjis-ecosystem/ai/service/internal/db"
 	"github.com/berjistech/berjis-ecosystem/ai/service/internal/inference"
 	"github.com/berjistech/berjis-ecosystem/ai/service/internal/policy"
+	coreauth "github.com/berjistech/berjis-ecosystem/shared/coreauth"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 )
@@ -120,9 +121,18 @@ func New(opts Options) *fiber.App {
 
 	// Keep tight upstream timeouts to avoid edge proxy timeouts that drop CORS headers.
 	httpClientAuth := &http.Client{Timeout: 8 * time.Second}
+	var authVerifier *coreauth.Verifier
+	if v, err := coreauth.NewVerifier(coreauth.Config{
+		CoreAPIBase: opts.Config.CoreAPIBase,
+		HTTPClient:  httpClientAuth,
+	}); err != nil {
+		log.Printf("warn: coreauth verifier init failed: %v", err)
+	} else {
+		authVerifier = v
+	}
 	// Allow long cold-starts when the first model loads
 	httpClientLLM := &http.Client{Timeout: 90 * time.Second}
-	verify := aauth.RequireAuth(aauth.Options{CoreAPIBase: opts.Config.CoreAPIBase, HTTP: httpClientAuth})
+	verify := aauth.RequireAuth(aauth.Options{CoreAPIBase: opts.Config.CoreAPIBase, HTTP: httpClientAuth, Verifier: authVerifier})
 	ollama := inference.NewOllama(opts.Config.OllamaBase, httpClientLLM)
 	metrics := newMetrics()
 	var store *db.Store
