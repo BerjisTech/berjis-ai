@@ -26,6 +26,18 @@
       ],
       "@berjis/angular-auth": [
         "../../clients/angular-auth/src/index.ts"
+      ],
+      "@angular/*": [
+        "./node_modules/@angular/*",
+        "../../node_modules/@angular/*"
+      ],
+      "rxjs": [
+        "./node_modules/rxjs",
+        "../../node_modules/rxjs"
+      ],
+      "zone.js": [
+        "./node_modules/zone.js",
+        "../../node_modules/zone.js"
       ]
     }
   }
