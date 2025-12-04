@@ -16,6 +16,8 @@ type Config struct {
 	DefaultModel string
 	// SafetyStrict toggles hard blocking of sensitive prompts
 	SafetyStrict bool
+	// SearchProxyKey authorizes internal services (like the public search summary bridge) to call AI without user tokens.
+	SearchProxyKey string
 }
 
 func getenv(k, def string) string {
@@ -35,5 +37,6 @@ func Load() Config {
 		OllamaBase:     getenv("OLLAMA_BASE", "http://ollama:11434"),
 		DefaultModel:   getenv("DEFAULT_MODEL", "llama3.1:8b"),
 		SafetyStrict:   getenv("AI_SAFETY_STRICT", "true") == "true",
+		SearchProxyKey: getenv("SEARCH_PROXY_KEY", ""),
 	}
 }

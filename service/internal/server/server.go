@@ -2,6 +2,7 @@ package server
 
 import (
 	"bufio"
+	"crypto/subtle"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -138,6 +139,20 @@ func New(opts Options) *fiber.App {
 	var store *db.Store
 	if opts.DB != nil {
 		store = db.NewStore(opts.DB)
+	}
+	searchKey := strings.TrimSpace(opts.Config.SearchProxyKey)
+	requireSearchKey := func(c *fiber.Ctx) error {
+		if searchKey == "" {
+			return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{"success": false, "message": "search bridge not configured"})
+		}
+		key := strings.TrimSpace(c.Get("X-Berjis-Ai-Key"))
+		if key == "" {
+			key = strings.TrimSpace(c.Get("X-Internal-Key"))
+		}
+		if key == "" || subtle.ConstantTimeCompare([]byte(key), []byte(searchKey)) != 1 {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"success": false, "message": "unauthorized"})
+		}
+		return c.Next()
 	}
 
 	// Background warmup: trigger default model load so first request is fast.
@@ -367,6 +382,78 @@ func New(opts Options) *fiber.App {
 			_ = store.IncDaily("completions", body.Model, 1)
 		}
 		return c.JSON(fiber.Map{"success": true, "data": fiber.Map{"model": model, "text": text}})
+	})
+
+	// Internal bridge for public search summaries (no end-user auth, guarded by shared key)
+	app.Post("/v1/search/summary", requireSearchKey, func(c *fiber.Ctx) error {
+		var body struct {
+			Model     string `json:"model"`
+			Prompt    string `json:"prompt"`
+			MaxTokens int    `json:"maxTokens"`
+			Query     string `json:"query"`
+		}
+		if err := c.BodyParser(&body); err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"success": false, "message": "invalid body"})
+		}
+		prompt := strings.TrimSpace(body.Prompt)
+		if prompt == "" {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"success": false, "message": "prompt required"})
+		}
+		if len(prompt) > 4000 {
+			runes := []rune(prompt)
+			if len(runes) > 4000 {
+				prompt = string(runes[:4000])
+			}
+		}
+		query := strings.TrimSpace(body.Query)
+		model := strings.TrimSpace(body.Model)
+		if model == "" {
+			model = opts.Config.DefaultModel
+		}
+		if opts.Config.SafetyStrict && query != "" && policy.IsSensitiveText(query) {
+			metrics.incBlocked()
+			safe := "I can't share developer or internal details. Here's a public overview of Berjis and how to get started at berjis.tech."
+			return c.JSON(fiber.Map{"success": true, "data": fiber.Map{"model": model, "text": safe}})
+		}
+		maxTokens := body.MaxTokens
+		if maxTokens <= 0 || maxTokens > 400 {
+			maxTokens = 220
+		}
+		text, usedModel, err := ollama.Generate(model, prompt, maxTokens)
+		if err != nil {
+			metrics.incError()
+			lower := strings.ToLower(err.Error())
+			if strings.Contains(lower, "not found") {
+				if model != opts.Config.DefaultModel {
+					if text2, model2, err2 := ollama.Generate(opts.Config.DefaultModel, prompt, maxTokens); err2 == nil {
+						text = text2
+						usedModel = model2
+					} else {
+						tags, terr := ollama.Models()
+						if terr == nil {
+							return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"success": false, "message": "requested model not available", "available": modelNames(tags.Models)})
+						}
+						return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"success": false, "message": "requested model not available"})
+					}
+				} else {
+					tags, terr := ollama.Models()
+					if terr == nil {
+						return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"success": false, "message": "requested model not available", "available": modelNames(tags.Models)})
+					}
+					return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"success": false, "message": "requested model not available"})
+				}
+			} else {
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"success": false, "message": err.Error()})
+			}
+		}
+		if strings.TrimSpace(usedModel) == "" {
+			usedModel = model
+		}
+		metrics.incCompletion(usedModel)
+		if store != nil {
+			_ = store.IncDaily("completions", usedModel, 1)
+		}
+		return c.JSON(fiber.Map{"success": true, "data": fiber.Map{"model": usedModel, "text": text}})
 	})
 
 	app.Post("/v1/embeddings", verify, func(c *fiber.Ctx) error {
