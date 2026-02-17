@@ -569,6 +569,194 @@ func New(opts Options) *fiber.App {
 		return c.JSON(fiber.Map{"success": true, "data": fiber.Map{"days": axis, "metrics": out}})
 	})
 
+	// ── RAG: Document Ingestion & Retrieval-Augmented Chat ──
+
+	// Ingest a document: chunk it, embed each chunk, store in DB
+	app.Post("/v1/documents", verify, func(c *fiber.Ctx) error {
+		if store == nil {
+			return c.Status(503).JSON(fiber.Map{"success": false, "message": "database unavailable"})
+		}
+		uid := c.Get("X-Berjis-Uid")
+		if uid == "" {
+			uid = "anonymous"
+		}
+		var body struct {
+			Title   string `json:"title"`
+			Source  string `json:"source"`
+			Content string `json:"content"`
+		}
+		if err := c.BodyParser(&body); err != nil || strings.TrimSpace(body.Content) == "" {
+			return c.Status(400).JSON(fiber.Map{"success": false, "message": "content required"})
+		}
+		if body.Title == "" {
+			body.Title = "Untitled"
+		}
+
+		// Chunk the text (~500 chars per chunk with overlap)
+		chunks := chunkText(body.Content, 500, 50)
+		if len(chunks) == 0 {
+			return c.Status(400).JSON(fiber.Map{"success": false, "message": "content too short"})
+		}
+
+		// Embed all chunks
+		embeddings, err := ollama.Embed("nomic-embed-text", chunks)
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{"success": false, "message": "embedding failed: " + err.Error()})
+		}
+
+		// Store chunks with embeddings
+		ids := make([]string, 0, len(chunks))
+		for i, chunk := range chunks {
+			var emb []float32
+			if i < len(embeddings) {
+				emb = embeddings[i]
+			}
+			id, err := store.InsertRagChunk(uid, body.Title, body.Source, i, chunk, emb)
+			if err != nil {
+				return c.Status(500).JSON(fiber.Map{"success": false, "message": "store failed"})
+			}
+			ids = append(ids, id)
+		}
+
+		return c.JSON(fiber.Map{"success": true, "data": fiber.Map{"chunks": len(chunks), "ids": ids}})
+	})
+
+	// List user's documents
+	app.Get("/v1/documents", verify, func(c *fiber.Ctx) error {
+		if store == nil {
+			return c.Status(503).JSON(fiber.Map{"success": false, "message": "database unavailable"})
+		}
+		uid := c.Get("X-Berjis-Uid")
+		if uid == "" {
+			uid = "anonymous"
+		}
+		docs, err := store.ListRagDocuments(uid)
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{"success": false})
+		}
+		return c.JSON(fiber.Map{"success": true, "data": docs})
+	})
+
+	// Delete a document chunk or all chunks by title
+	app.Delete("/v1/documents/:id", verify, func(c *fiber.Ctx) error {
+		if store == nil {
+			return c.Status(503).JSON(fiber.Map{"success": false, "message": "database unavailable"})
+		}
+		uid := c.Get("X-Berjis-Uid")
+		if uid == "" {
+			uid = "anonymous"
+		}
+		docID := c.Params("id")
+		if err := store.DeleteRagDocument(docID, uid); err != nil {
+			return c.Status(500).JSON(fiber.Map{"success": false})
+		}
+		return c.JSON(fiber.Map{"success": true})
+	})
+
+	// RAG search: find relevant chunks for a query
+	app.Post("/v1/search", verify, func(c *fiber.Ctx) error {
+		if store == nil {
+			return c.Status(503).JSON(fiber.Map{"success": false, "message": "database unavailable"})
+		}
+		uid := c.Get("X-Berjis-Uid")
+		if uid == "" {
+			uid = "anonymous"
+		}
+		var body struct {
+			Query string `json:"query"`
+			TopK  int    `json:"topK"`
+		}
+		if err := c.BodyParser(&body); err != nil || strings.TrimSpace(body.Query) == "" {
+			return c.Status(400).JSON(fiber.Map{"success": false, "message": "query required"})
+		}
+		if body.TopK <= 0 || body.TopK > 20 {
+			body.TopK = 5
+		}
+
+		results, err := ragSearch(ollama, store, uid, body.Query, body.TopK)
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{"success": false, "message": err.Error()})
+		}
+		return c.JSON(fiber.Map{"success": true, "data": results})
+	})
+
+	// RAG-enhanced chat: retrieve context then answer
+	app.Post("/v1/chat/rag", verify, func(c *fiber.Ctx) error {
+		if store == nil {
+			return c.Status(503).JSON(fiber.Map{"success": false, "message": "database unavailable"})
+		}
+		uid := c.Get("X-Berjis-Uid")
+		if uid == "" {
+			uid = "anonymous"
+		}
+		var body struct {
+			Model    string `json:"model"`
+			Question string `json:"question"`
+			TopK     int    `json:"topK"`
+		}
+		if err := c.BodyParser(&body); err != nil || strings.TrimSpace(body.Question) == "" {
+			return c.Status(400).JSON(fiber.Map{"success": false, "message": "question required"})
+		}
+		if body.TopK <= 0 || body.TopK > 10 {
+			body.TopK = 3
+		}
+		model := body.Model
+		if model == "" {
+			model = opts.Config.DefaultModel
+		}
+
+		// Safety check
+		if opts.Config.SafetyStrict && policy.IsSensitiveText(body.Question) {
+			metrics.incBlocked()
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"success": false, "message": "This question relates to sensitive internal topics and cannot be answered."})
+		}
+
+		// Retrieve relevant chunks
+		results, err := ragSearch(ollama, store, uid, body.Question, body.TopK)
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{"success": false, "message": "search failed: " + err.Error()})
+		}
+
+		// Build context from retrieved chunks
+		var contextParts []string
+		for _, r := range results {
+			contextParts = append(contextParts, fmt.Sprintf("[%s] %s", r.Title, r.Content))
+		}
+		contextText := strings.Join(contextParts, "\n\n")
+
+		// Build messages with RAG context
+		systemMsg := "You are a knowledgeable assistant. Use the following retrieved context to answer the user's question. If the context doesn't contain relevant information, say so and answer based on your general knowledge.\n\n--- Retrieved Context ---\n" + contextText + "\n--- End Context ---"
+		messages := []inference.ChatMessage{
+			{Role: "system", Content: systemMsg},
+			{Role: "user", Content: body.Question},
+		}
+
+		chatReq := inference.ChatRequest{
+			Model:    model,
+			Messages: messages,
+			Stream:   false,
+		}
+		resp, err := ollama.Chat(chatReq)
+		if err != nil {
+			metrics.incError()
+			return c.Status(500).JSON(fiber.Map{"success": false, "message": err.Error()})
+		}
+
+		metrics.incChat(model)
+		if store != nil {
+			_ = store.IncDaily("chats", model, 1)
+		}
+
+		return c.JSON(fiber.Map{
+			"success": true,
+			"data": fiber.Map{
+				"model":   resp.Model,
+				"answer":  resp.Message.Content,
+				"sources": results,
+			},
+		})
+	})
+
 	// Prometheus-style metrics (plain text). Keep simple for now.
 	app.Get("/metrics", func(c *fiber.Ctx) error {
 		snap := metrics.snapshot()
